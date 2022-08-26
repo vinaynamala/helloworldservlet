@@ -27,18 +27,21 @@ stage('Sonarqube') {
         withSonarQubeEnv('sonarqube') {
             sh "${scannerHome}/bin/sonar-scanner"
         }
-        }
+  //      timeout(time: 10, unit: 'MINUTES') {
+ //           waitForQualityGate abortPipeline: true
+  //      }
     }
 }
+
 stage ( artifact uploader ){
 	steps {
-		nexisPublisher nexusInstanceId: '1234', nexusRepositoryId: 'hello-world-servlet', packages: [[$class: 'MavenPackage', mavenAssetList: [[classifier: '', extension: '', filePath: 'target/helloworld.war']], mavenCoordinate: [artifactId: 'hello-world-servlet-example', groupId: 'com.geekcap.vmturbo', packaging: 'war', version: '$BUILD_NUMBER']]]
+		nexusPublisher nexusInstanceId: '1234', nexusRepositoryId: 'hello-world-servlet', packages: [[$class: 'MavenPackage', mavenAssetList: [[classifier: '', extension: '', filePath: 'target/helloworld.war']], mavenCoordinate: [artifactId: 'hello-world-servlet-example', groupId: 'com.geekcap.vmturbo', packaging: 'war', version: '$BUILD_NUMBER']]]
 		}	
 	} 
 
 stage ( deploy to war ){
 	steps {
-		sh label; ", script: 'ansible-playbook deploy.yml'
+		deploy adapters: [tomcat8(credentialsId: 'tomcat-cred', path: '', url: 'http://3.82.103.10:8080/')], contextPath: 'HelloWorldServlet', war: '**/*.war'
 		}	
 	} 	
 }
