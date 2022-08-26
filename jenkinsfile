@@ -1,0 +1,51 @@
+pipeline 
+{
+agent any (on which) 
+
+options { buildDiscarder(logRotator(numToKeepStr: '1')) }
+
+triggers { cron('H */4 * * 1-5')  }
+
+tools { maven 'Maven'   } 
+
+
+stage (code checkout) {
+	steps 	{	
+		git 'https://github.com/vinaynamala/helloworldservlet.git' }
+	}
+
+stage  (build){
+	steps  {
+		sh 'clean package' 
+		}
+	}
+stage('Sonarqube') {
+    environment {
+        scannerHome = tool 'sonarqube'
+    }
+    steps {
+        withSonarQubeEnv('sonarqube') {
+            sh "${scannerHome}/bin/sonar-scanner"
+        }
+        }
+    }
+}
+stage ( artifact uploader ){
+	steps {
+		nexisPublisher nexusInstanceId: '1234', nexusRepositoryId: 'hello-world-servlet', packages: [[$class: 'MavenPackage', mavenAssetList: [[classifier: '', extension: '', filePath: 'target/helloworld.war']], mavenCoordinate: [artifactId: 'hello-world-servlet-example', groupId: 'com.geekcap.vmturbo', packaging: 'war', version: '$BUILD_NUMBER']]]
+		}	
+	} 
+
+stage ( deploy to war ){
+	steps {
+		deploy adapters: [tomcat8(credentialsId: 'tomcat-cred', path: '', url: 'http://3.82.103.10:8080/')], contextPath: 'HelloWorldServlet', war: '**/*.war'
+		}	
+	} 	
+}
+
+post {
+	sucess : junit '**/target/surefire-reports/*.xml' 
+ 	         cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: '**/target/site/cobertura/coverage.xml', conditionalCoverageTargets: '70, 0, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '80, 0, 0', maxNumberOfBuilds: 0, methodCoverageTargets: '80, 0, 0', onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false
+	failuer : mail bcc: '', body: '', cc: '', from: '', replyTo: '', subject: 'HelloWorldServlet', to: 'namalavinay038@gmail.com'
+	}
+}
