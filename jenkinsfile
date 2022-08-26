@@ -8,12 +8,10 @@ triggers { cron('H */4 * * 1-5')  }
 
 tools { maven 'Maven'   } 
 
-stages 
 
 stage (code checkout) {
 	steps 	{	
-		checkout([$class: 'GitSCM', branches: [[name: '*/devolop']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/vinaynamala/hello-world-servlet.git']]])
-		}
+		git 'https://github.com/vinaynamala/helloworldservlet.git' }
 	}
 
 stage  (build){
@@ -21,17 +19,20 @@ stage  (build){
 		sh 'clean package' 
 		}
 	}
-stage (code quality ){
-	steps {
-		withSonarQubeEnv {
-    // some block
+stage('Sonarqube') {
+    environment {
+        scannerHome = tool 'sonarqube'
+    }
+    steps {
+        withSonarQubeEnv('sonarqube') {
+            sh "${scannerHome}/bin/sonar-scanner"
         }
-		}	
-	}
-
+        }
+    }
+}
 stage ( artifact uploader ){
 	steps {
-		nexusPublisher nexusInstanceId: '1234', nexusRepositoryId: 'hello-world-servlet', packages: [[$class: 'MavenPackage', mavenAssetList: [[classifier: '', extension: '', filePath: 'target/helloworld.war']], mavenCoordinate: [artifactId: 'hello-world-servlet-example', groupId: 'com.geekcap.vmturbo', packaging: 'war', version: '$BUILD_NUMBER']]]
+		nexisPublisher nexusInstanceId: '1234', nexusRepositoryId: 'hello-world-servlet', packages: [[$class: 'MavenPackage', mavenAssetList: [[classifier: '', extension: '', filePath: 'target/helloworld.war']], mavenCoordinate: [artifactId: 'hello-world-servlet-example', groupId: 'com.geekcap.vmturbo', packaging: 'war', version: '$BUILD_NUMBER']]]
 		}	
 	} 
 
