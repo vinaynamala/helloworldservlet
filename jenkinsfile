@@ -38,7 +38,7 @@ stage ( artifact uploader ){
 
 stage ( deploy to war ){
 	steps {
-		deploy adapters: [tomcat8(credentialsId: 'tomcat-cred', path: '', url: 'http://3.82.103.10:8080/')], contextPath: 'HelloWorldServlet', war: '**/*.war'
+		sh label; ", script: 'ansible-playbook deploy.yml'
 		}	
 	} 	
 }
